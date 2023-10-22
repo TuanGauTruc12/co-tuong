@@ -1,0 +1,37 @@
+﻿<button id="player1Button" style="display: block">Người Chơi 1</button>
+<button id="player2Button" style="display: none">Người Chơi 2</button>
+<p id="statusMessage">Chờ người chơi 1 nhấn...</p>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.11/signalr.min.js"></script>
+<script>
+    $(document).ready(function () {
+        const connection = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
+
+        connection.on("player1Pressed", () => {
+            $("#player1Button").hide();
+            $("#player2Button").show();
+            $("#statusMessage").text("Người Chơi 2, bạn đã sẵn sàng.");
+        });
+
+        connection.on("player2Pressed", () => {
+            $("#player2Button").hide();
+            $("#player1Button").show();
+            $("#statusMessage").text("Người Chơi 1, bạn đã sẵn sàng.");
+        });
+
+        $("#player1Button").click(function () {
+            connection.invoke("player1Pressed");
+        });
+
+        $("#player2Button").click(function () {
+            connection.invoke("player2Pressed");
+        });
+
+        connection.start().then(function () {
+            // Khởi tạo trạng thái với người chơi 1
+            $("#player1Button").show();
+            $("#statusMessage").text("Người Chơi 1, bạn hãy nhấn nút.");
+        });
+    });
+</script>

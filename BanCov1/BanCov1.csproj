@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\Images\bancotuong.jpg" />
+    <None Include="wwwroot\Images\chutuongden.svg" />
+    <None Include="wwwroot\Images\chutuongdo.svg" />
+    <None Include="wwwroot\Images\maden1.svg" />
+    <None Include="wwwroot\Images\maden2.svg" />
+    <None Include="wwwroot\Images\mado1.svg" />
+    <None Include="wwwroot\Images\mado2.svg" />
+    <None Include="wwwroot\Images\nhuquynh11.jpg" />
+    <None Include="wwwroot\Images\nq2021v1.jpg" />
+    <None Include="wwwroot\Images\phaoden1.svg" />
+    <None Include="wwwroot\Images\phaoden2.svg" />
+    <None Include="wwwroot\Images\phaodo1.svg" />
+    <None Include="wwwroot\Images\phaodo2.svg" />
+    <None Include="wwwroot\Images\quanco.jpg" />
+    <None Include="wwwroot\Images\siden1.svg" />
+    <None Include="wwwroot\Images\siden2.svg" />
+    <None Include="wwwroot\Images\sido1.svg" />
+    <None Include="wwwroot\Images\sido2.svg" />
+    <None Include="wwwroot\Images\totden1.svg" />
+    <None Include="wwwroot\Images\totden2.svg" />
+    <None Include="wwwroot\Images\totden3.svg" />
+    <None Include="wwwroot\Images\totden4.svg" />
+    <None Include="wwwroot\Images\totden5.svg" />
+    <None Include="wwwroot\Images\totdo1.svg" />
+    <None Include="wwwroot\Images\totdo2.svg" />
+    <None Include="wwwroot\Images\totdo3.svg" />
+    <None Include="wwwroot\Images\totdo4.svg" />
+    <None Include="wwwroot\Images\totdo5.svg" />
+    <None Include="wwwroot\Images\tuongden.svg" />
+    <None Include="wwwroot\Images\tuongden1.svg" />
+    <None Include="wwwroot\Images\tuongden2.svg" />
+    <None Include="wwwroot\Images\tuongdo.svg" />
+    <None Include="wwwroot\Images\tuongdo1.svg" />
+    <None Include="wwwroot\Images\tuongdo2.svg" />
+    <None Include="wwwroot\Images\xeden1.svg" />
+    <None Include="wwwroot\Images\xeden2.svg" />
+    <None Include="wwwroot\Images\xedo1.svg" />
+    <None Include="wwwroot\Images\xedo2.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.SignalR" Version="2.4.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Libs\Libs.csproj" />
+  </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+
+</Project>
