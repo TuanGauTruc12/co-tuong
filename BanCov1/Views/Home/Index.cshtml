@@ -577,7 +577,6 @@
     var roomName = "";
     var connection = new signalR.HubConnectionBuilder().withUrl("/chessHub").build();
     var avatar = document.querySelector(".avatar");
-    var isTwoPlayers = false;
 
     var app = new Vue({
         el: '#app',
@@ -588,21 +587,25 @@
             currentPlayer: "den",
             playerCount: 0
         },
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         methods: {
+            startGame() {
+                this.currentPlayer = "den";
+                //set default value  
+
+
+
+
+            },
+            getChessNode() {
+                axios({
+                    url: '/api/chess/loadChessBoard',
+                    method: 'GET',
+                    responseType: 'Json',
+                }).then((response) => {
+                    this.chessNode = response.data.chessNode;
+                    matrix = response.data.maxtrix;
+                });
+            },
 
 
 
@@ -616,22 +619,8 @@
                 return false;
             },
             
-            
-            
-            
-            
             switchPlayer() {
                 this.currentPlayer = (this.currentPlayer === "den") ? "do" : "den";
-            },
-            startGame() {
-                if (this.playerCount < 2) {
-                    this.playerCount++;
-                    if (this.playerCount === 2) {
-                        console.log(this.playerCount);
-                        this.currentPlayer = "do";
-                        document.querySelector(".avatar").style.backgroundColor = "red";
-                    }
-                }
             },
             handlePlayerTurn(event) {
                 if (this.playerCount < 2) {
@@ -644,17 +633,7 @@
                     this.switchPlayer(); // Chuyển lượt
                 }
             },
-            getChessNode() {
-                axios({
-                    url: '/api/chess/loadChessBoard',
-                    method: 'GET',
-                    responseType: 'Json',
-                }).then((response) => {
-                    this.chessNode = response.data.chessNode;
-                    matrix = response.data.maxtrix;
-                    document.querySelector(".avatar").style.backgroundColor = "black";
-                });
-            },
+           
             dragStart(event) {
                 this.top = event.clientY;
                 this.left = event.clientX;
@@ -680,9 +659,7 @@
 
                 console.error("Không tìm thấy node phù hợp.");
                 return null;
-            },
-           
-            
+            },         
             
             dragEnd(event) {
                 var id = event.currentTarget.id;
@@ -707,7 +684,7 @@
                 }
                 var objRemove = null;
 
-                //Ma do
+                //Ma
                 if (id.indexOf('ma') >= 0) {
                     var gapI = Math.abs(nodeEnd.i - nodeStart.i);
                     var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
@@ -942,6 +919,8 @@
                     }
                 }
 
+                //Thiếu pháo
+
                 function sendChessMove(id, fromi, fromj, toi, toj) {
                     connection.invoke("MoveChess", roomName, id, fromi, fromj, toi, toj).catch(function (err) {
                         console.error(err.toString());
@@ -967,29 +946,11 @@
                 this.currentPlayer = this.currentPlayer === "den" ? "do" : "den";
             },
         },
-        
-        
-        
-        
-        
 
-
-
-
-
-
-
-
-
-
-
-
-        
-        
-        
         mounted: function () {
             this.getChessNode();
-            var connection = new signalR.HubConnectionBuilder().withUrl("/chessHub").build();
+            var connection;
+            document.querySelector(".avatar").style.backgroundColor = "black";
 
             connection.on("ReceiveChessMove", function (message) {
                 console.log(message);
