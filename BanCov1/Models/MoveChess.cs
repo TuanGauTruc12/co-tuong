@@ -8,5 +8,7 @@
         public int fromj { get; set; }
         public int toi { get; set; }
         public int toj { get; set; }
+        public bool currentPlayer { get; set; }
+        public bool player { get; set; }
     }
 }

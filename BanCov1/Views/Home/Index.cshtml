@@ -52,16 +52,23 @@
     }
 
     .avatar{
-        width: 150px;
-        height: 150px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         margin-left: 90px;
 
     }
+
+    .game-over{
+        font-size: 1.5rem;
+    }
  </style>
 
 <div id="app" style="min-height:800px">
-    <div class="avatar"></div>
+    <div style="display: flex; gap: 16px; justify-content: center; align-items: center; width: 850px;">
+        <div class="avatar"></div>
+        <h1 class="game-over"></h1>
+    </div>
     <div class="chessboard">
         <div v-for="item in chessNode" class="chessnode"
              v-on:dragstart="dragStart"
@@ -155,6 +162,12 @@
                 return null;
             },
             dragEnd(event) {
+
+
+
+
+
+
                 var id = event.currentTarget.id;
 
                 if (this.currentPlayer === "den" && id.indexOf('den') === -1) {
@@ -491,18 +504,12 @@
                 if (objRemove != null) {
                     para.push(objRemove);
                 }
-                axios({
-                    url: '/api/chess/move-check-node',
-                    method: 'Post',
-                    responseType: 'Json',
-                    data: para
-                }).then((response) => {
-                    this.currentPlayer = this.currentPlayer === "den" ? "do" : "den";
-                });
+
 
                 sendChessMove(id, nodeStart.i, nodeStart.j, nodeEnd.i, nodeEnd.j);
-                this.currentPlayer = this.currentPlayer === "den" ? "do" : "den";
             }
+
+
         },
         mounted: function () {
             this.getChessNode();
@@ -570,13 +577,15 @@
 
 
 
+    window.addEventListener("beforeunload", function (event) { primus.end(); });
 
-
-
+   //khai báo 
     var matrix = [];
+
     var roomName = "";
     var connection = new signalR.HubConnectionBuilder().withUrl("/chessHub").build();
     var avatar = document.querySelector(".avatar");
+    let player = false;
 
     var app = new Vue({
         el: '#app',
@@ -584,17 +593,19 @@
             chessNode: [],
             top: 0,
             left: 0,
+            playerCount: 0,
             currentPlayer: "den",
-            playerCount: 0
         },
         methods: {
             startGame() {
-                this.currentPlayer = "den";
-                //set default value  
-
-
-
-
+                this.getChessNode();
+            },
+            isPlayerPiece(id) {
+                if ((this.currentPlayer === "den" && id.indexOf('den') !== -1) ||
+                    ((this.currentPlayer === "do" && id.indexOf('do') !== -1))) {
+                    return true;
+                }
+                return false;
             },
             getChessNode() {
                 axios({
@@ -607,38 +618,19 @@
                 });
             },
 
-
-
-            isPlayerPiece(id) {
-                if ((this.currentPlayer === "den" 
-                        && id.indexOf('den') !== -1) 
-                       || (this.currentPlayer === "do" 
-                       && id.indexOf('do') !== -1)) {
-                    return true;
-                }
-                return false;
-            },
-            
             switchPlayer() {
                 this.currentPlayer = (this.currentPlayer === "den") ? "do" : "den";
             },
-            handlePlayerTurn(event) {
-                if (this.playerCount < 2) {
-                    return;
-                }
-                var id = event.currentTarget.id;
-                if (this.isPlayerPiece(id)) {
-                    this.dragStart(event);
-                    this.dragEnd(event);
-                    this.switchPlayer(); // Chuyển lượt
-                }
-            },
-           
             dragStart(event) {
                 this.top = event.clientY;
                 this.left = event.clientX;
             },
-            
+            canMovePiece(id) {
+                return (this.currentPlayer === "den" && id.indexOf('den') !== -1) ||
+                    (this.currentPlayer === "do" && id.indexOf('do') !== -1);
+            },
+
+
             getIndexByTopLeft(top, left, matrix) {
                 if (!matrix || matrix.length === 0) {
                     console.error("Matrix không tồn tại hoặc rỗng.");
@@ -659,17 +651,24 @@
 
                 console.error("Không tìm thấy node phù hợp.");
                 return null;
-            },         
-            
-            dragEnd(event) {
-                var id = event.currentTarget.id;
+            },
 
+            dragEnd(event) {
+
+                /*
+                if (player) {
+                    return;
+                }
+                */
+                console.log(this.currentPlayer);
+                var id = event.currentTarget.id;
                 if (this.currentPlayer === "den" && id.indexOf('den') === -1) {
                     return;
                 }
                 if (this.currentPlayer === "do" && id.indexOf('do') === -1) {
                     return;
                 }
+                console.log(player);
 
                 var moveX = event.clientX - this.left;
                 var moveY = event.clientY - this.top;
@@ -678,27 +677,46 @@
 
                 var nodeStart = this.getIndexByTopLeft(event.currentTarget.offsetTop, event.currentTarget.offsetLeft, matrix);
                 var nodeEnd = this.getIndexByTopLeft(moveY, moveX, matrix);
-
                 if (nodeEnd == null) {
                     return;
                 }
                 var objRemove = null;
-
-                //Ma
+                //Ma do
                 if (id.indexOf('ma') >= 0) {
                     var gapI = Math.abs(nodeEnd.i - nodeStart.i);
                     var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
-                    if (!((gapI == 1 && gapJ == 2) || (gapJ == 1 && gapI == 2)) ||
-                        (gapI == 1 && gapJ == 2 && (nodeEnd.j > nodeStart.j) ? matrix[nodeStart.i][nodeStart.j + 1].id != "" : matrix[nodeStart.i][nodeStart.j - 1].id != "") ||
-                        (gapI == 2 && gapJ == 1 && (nodeEnd.i > nodeStart.i) ? matrix[nodeStart.i + 1][nodeStart.j].id != "" : matrix[nodeStart.i - 1][nodeStart.j].id != "")) {
+                    if (!((gapI == 1 && gapJ == 2) || (gapJ == 1 && gapI == 2))) {
                         return;
+                    }
+                    if ((gapI == 1 && gapJ == 2) && (nodeEnd.j > nodeStart.j)) {
+                        if (matrix[nodeStart.i][nodeStart.j + 1].id != "") {
+                            return;
+                        }
+                    }
+                    if ((gapI == 1 && gapJ == 2) && (nodeEnd.j < nodeStart.j)) {
+                        if (matrix[nodeStart.i][nodeStart.j - 1].id != "") {
+                            return;
+                        }
+                    }
+
+                    if ((gapI == 2 && gapJ == 1) && (nodeEnd.i > nodeStart.i)) {
+                        if (matrix[nodeStart.i + 1][nodeStart.j].id != "") {
+                            return;
+                        }
+                    }
+                    if ((gapI == 2 && gapJ == 1) && (nodeEnd.i < nodeStart.i)) {
+                        if (matrix[nodeStart.i - 1][nodeStart.j].id != "") {
+                            return;
+                        }
                     }
 
                     if (id.indexOf('do') > 0) {
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('do') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
@@ -706,22 +724,28 @@
                     if (id.indexOf('den') > 0) {
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('den') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
                     }
                 }
 
+
                 // Xe
                 if (id.indexOf("xe") >= 0) {
                     var gapI = Math.abs(nodeEnd.i - nodeStart.i);
                     var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
+
+                    // Kiểm tra xem con xe di chuyển theo hàng hoặc cột
                     if (gapI > 0 && gapJ > 0) {
                         return;
                     }
 
+                    // Kiểm tra xem con xe không nhảy qua các quân cờ
                     if (gapI > 0) {
                         for (let i = Math.min(nodeStart.i, nodeEnd.i) + 1; i < Math.max(nodeStart.i, nodeEnd.i); i++) {
                             if (matrix[i][nodeStart.j].id !== "") {
@@ -736,6 +760,7 @@
                         }
                     }
 
+                    // Kiểm tra xem nếu ô đích đã có quân cờ, nó phải thuộc phe đối phương
                     if (matrix[nodeEnd.i][nodeEnd.j].id !== "") {
                         if (id.indexOf('do') >= 0 && matrix[nodeEnd.i][nodeEnd.j].id.indexOf('do') >= 0) {
                             return;
@@ -745,11 +770,14 @@
                         }
                     }
 
+
                     if (id.indexOf('do') > 0) {
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('do') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
@@ -757,42 +785,52 @@
                     if (id.indexOf('den') > 0) {
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('den') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
                     }
+
                 }
+
 
                 //tuong
                 if (id.indexOf('Tuong') >= 0) {
                     var gapI = Math.abs(nodeEnd.i - nodeStart.i);
                     var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
+
                     if (id.indexOf('do') > 0) {
                         if (!((gapI == 2 && gapJ == 2) && (nodeEnd.i < 5))) {
                             return;
                         }
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('do') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
                     }
                     if (id.indexOf('den') > 0) {
-                        if (!((gapI == 2 && gapJ == 2) && (nodeEnd.i >= 5)) || (gapI == 1 && gapJ == 1)) {
+                        if (!((gapI == 2 && gapJ == 2) && (nodeEnd.i >= 5))) {
                             return;
                         }
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('den') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
                     }
+
                     if ((nodeEnd.j > nodeStart.j) && (nodeEnd.i > nodeStart.i)) {
                         if (matrix[nodeStart.i + 1][nodeStart.j + 1].id != "") {
                             return;
@@ -818,18 +856,23 @@
                 if (id.indexOf('si') >= 0) {
                     var gapI = Math.abs(nodeEnd.i - nodeStart.i);
                     var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
+
                     if (!((gapI == 1 && gapJ == 1) && nodeEnd.j >= 3 && nodeEnd.j <= 5)) {
                         return;
                     }
+
                     if (id.indexOf('den') > 0) {
                         if (!(nodeEnd.i >= 7))
                             return;
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('den') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
+
                         }
                     }
                     if (id.indexOf('do') > 0) {
@@ -837,27 +880,37 @@
                             return;
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('do') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
+
                         }
                     }
                 }
                 //Chu tuong
                 if (id.indexOf('chutuong') >= 0) {
+                    var gapI = Math.abs(nodeEnd.i - nodeStart.i);
+                    var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
+
                     if (!(nodeEnd.j >= 3 && nodeEnd.j <= 5)) {
                         return;
                     }
+
                     if (id.indexOf('den') > 0) {
                         if (!(nodeEnd.i >= 7))
                             return;
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('den') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
+
                         }
                     }
                     if (id.indexOf('do') > 0) {
@@ -865,10 +918,13 @@
                             return;
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('do') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
+
                         }
                     }
                 }
@@ -876,116 +932,176 @@
                 if (id.indexOf('tot') >= 0) {
                     var gapI = Math.abs(nodeEnd.i - nodeStart.i);
                     var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
-                    if (!((gapI == 1 && gapJ == 1) || (gapI == 1 && gapJ == 0)) ||
-                        (gapI == 1 && gapJ == 1 && nodeEnd.i < 5) ||
-                        (gapI == 1 && gapJ == 0 && nodeEnd.i < 5)) {
+                    if (((gapI = gapI++) && (gapJ = gapJ++))) {//cấm chéo
                         return;
                     }
+                    if ((gapI++ >= 2))//cấm đi dọc 2 ô
+                        return;
+
                     if (id.indexOf('do') > 0) {
-                        if (nodeStart.i > nodeEnd.i)
+                        if (nodeStart.i > nodeEnd.i)//cấm đi lùi
                             return;
                         if (nodeEnd.i < 5) {
-                            if (gapJ == 1)
-                                return;
-                        } else {
-                            if (gapJ == 0)
+                            if (gapJ = gapJ++)//cấm ngang
                                 return;
                         }
+                        else {
+                            if (gapJ++ >= 2) //cấm đi ngang 2 ô
+                                return;
+                        }
+
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('do') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
                     }
+
                     if (id.indexOf('den') > 0) {
-                        if (nodeStart.i < nodeEnd.i)
+                        if (nodeStart.i < nodeEnd.i)//cấm đi lùi
                             return;
                         if (nodeEnd.i >= 5) {
-                            if (gapJ == 1)
-                                return;
-                        } else {
-                            if (gapJ == 0)
+                            if (gapJ = gapJ++)
                                 return;
                         }
+                        else {
+                            if (gapJ++ >= 2) //cấm đi ngang 2 ô
+                                return;
+                        }
+
                         if (nodeEnd.id != "" && nodeEnd.id.indexOf('den') > 0) {
                             return;
-                        } else {
-                            if (nodeEnd.id != "") {
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan do
+                            {
                                 objRemove = { id: nodeEnd.id };
                             }
                         }
                     }
                 }
 
-                //Thiếu pháo
+                //Phao
+                if (id.indexOf('phao') >= 0) {
+                    var gapI = Math.abs(nodeEnd.i - nodeStart.i);
+                    var gapJ = Math.abs(nodeEnd.j - nodeStart.j);
+                    if (!((gapI == 0) || (gapJ == 0))) {//cấm chéo
+                        return;
+                    }
+                    if (gapI == 0) {
+
+                        var from = Math.min(nodeStart.j, nodeEnd.j) + 1;
+                        var to = Math.max(nodeStart.j, nodeEnd.j);
+                        var obstacleCount = 0;
+                        for (var j = from; j < to; j++) {
+                            if (matrix[nodeStart.i][j].id != "") {
+                                obstacleCount++;
+                            }
+                        }
+                        if (obstacleCount > 1) {
+                            return;
+                        }
+                        if (obstacleCount == 1 && nodeEnd.id == "") {
+                            return;
+                        }
+                        if (obstacleCount == 0 && nodeEnd.id != "") {
+                            return;
+                        }
+                    } else {
+                        var from = Math.min(nodeStart.i, nodeEnd.i) + 1;
+                        var to = Math.max(nodeStart.i, nodeEnd.i);
+                        var obstacleCount = 0;
+                        for (var i = from; i < to; i++) {
+                            if (matrix[i][nodeStart.j].id !== "") {
+                                obstacleCount++;
+                            }
+                        }
+                        if (obstacleCount > 1) {
+                            return;
+                        }
+                        if (obstacleCount == 1 && nodeEnd.id == "") {
+                            return;
+                        }
+                        if (obstacleCount == 0 && nodeEnd.id != "") {
+                            return;
+                        }
+                    }
+
+                    if (id.indexOf('do') > 0) {
+                        if (nodeEnd.id != "" && nodeEnd.id.indexOf('do') > 0) {
+                            return;
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan den
+                            {
+                                objRemove = { id: nodeEnd.id };
+                            }
+                        }
+                    }
+
+                    if (id.indexOf('den') > 0) {
+                        if (nodeEnd.id != "" && nodeEnd.id.indexOf('den') > 0) {
+                            return;
+                        }
+                        else {
+                            if (nodeEnd.id != "")//quan do
+                            {
+                                objRemove = { id: nodeEnd.id };
+                            }
+                        }
+                    }
+                }
 
                 function sendChessMove(id, fromi, fromj, toi, toj) {
-                    connection.invoke("MoveChess", roomName, id, fromi, fromj, toi, toj).catch(function (err) {
+                    const current = app.currentPlayer === "den";
+                    connection.invoke("MoveChess", roomName, id, fromi, fromj, toi, toj, current, !current).then(function (response) {
+                        //add value red or black to dom element
+                        
+                    }).catch(function (err) {
                         console.error(err.toString());
                     });
                 }
 
-                var para = [{ id: id, fromi: moveX.i, fromj: moveX.j, toi: moveY.i, toj: moveY.j }];
-                if (objRemove != null) {
-                    para.push(objRemove);
-                }
 
+                var para = [{ id: id, fromi: nodeStart.i, fromj: nodeStart.j, toi: nodeEnd.i, toj: nodeEnd.j }];
                 axios({
                     url: '/api/chess/move-check-node',
                     method: 'Post',
                     responseType: 'Json',
-                    data: para,
-                }).then((response) => {
+                    data: para
+                }).then(() => {
                     this.currentPlayer = this.currentPlayer === "den" ? "do" : "den";
-                    avatar.style.backgroundColor = this.currentPlayer === "den" ? "black" : "red";
                 });
-
-                sendChessMove(id, nodeStart.i, nodeStart.j, nodeEnd.i, nodeEnd.j);
-                this.currentPlayer = this.currentPlayer === "den" ? "do" : "den";
-            },
-        },
-
-        mounted: function () {
-            this.getChessNode();
-            var connection;
-            document.querySelector(".avatar").style.backgroundColor = "black";
-
-            connection.on("ReceiveChessMove", function (message) {
-                console.log(message);
-                var response = JSON.parse(message);
-                matrix[response[0].fromi][response[0].fromj].id = "";
-                var nodeEnd = matrix[response[0].toi][response[0].toj];
-                nodeEnd.id = response[0].id;
-
-                var obj = document.getElementById(response[0].id);
-                obj.style.top = nodeEnd.top + 'px';
-                obj.style.left = nodeEnd.left + 'px';
-
-                if (response.length > 1) {
-                    var temp = document.getElementById(response[1].id);
-                    temp.style.display = "none";
+                
+                if (objRemove != null) {
+                    para.push(objRemove);
                 }
 
-                this.currentPlayer = this.currentPlayer === "den" ? "do" : "den";
-            });
-
-            connection.start().then(function () {
-                avatar.style.backgroundColor = this.currentPlayer === "den" ? "black" : "red";
-            }).catch(function (err) {
-                return console.error(err.toString());
-            });
+                sendChessMove(id, nodeStart.i, nodeStart.j, nodeEnd.i, nodeEnd.j);
+            },
+            mounted: function () {
+                this.getChessNode();
+                document.querySelector(".avatar").style.backgroundColor = this.currentPlayer === "den" ? "black" : "red";
+            }
         }
     });
 
+    const hanleMouseMove = (e) => {
+        alert("Only allowed to play when there are 2 people.");
+        e.preventDefault();
+    }
+
     connection.start().then(function () {
+        app.startGame();
         roomName = prompt("Enter room name:");
-        connection.invoke("JoinGameRoom", roomName).catch(function (err) {
+        connection.invoke("JoinGameRoom", roomName, app.currentPlayer === "den").catch(function (err) {
             console.error(err.toString());
         });
         document.querySelector(".chessboard").addEventListener("click", listenClick);
-        app.startGame();
 
     }).catch(function (err) {
         return console.error(err.toString());
@@ -1000,17 +1116,22 @@
         e.preventDefault();
     }
 
-    connection.on("UpdatePlayerCount", function (roomName, count) {
+    connection.on("UpdatePlayerCount", function (roomName, count, currentPlayer) {
         if (roomName === roomName) {
             app.playerCount = count;
-            
-            if (count === 2) {
+            if (count < 2) {
+                document.querySelector('.game-over').style.display = "none";
+                document.querySelector(".chessboard").addEventListener("mousemove", hanleMouseMove);
+            }
+            else if (count === 2) {
                 document.removeEventListener("click", listenClick);
+                document.querySelector(".chessboard").removeEventListener("mousemove", hanleMouseMove);
                 app.startGame();
             }
+            document.querySelector(".avatar").style.backgroundColor = (app.currentPlayer === "den") ? "black" : "red";
         }
-    });
 
+    });
 
     connection.on("ReceiveChessMove", function (message) {
         var response = JSON.parse(message);
@@ -1021,11 +1142,32 @@
         var obj = document.getElementById(response[0].id);
         obj.style.top = nodeEnd.top + 'px';
         obj.style.left = nodeEnd.left + 'px';
+        player=!player;
+        console.log(player);
 
-        if (response.length > 1) {
-            var temp = document.getElementById(response[1].id);
-            temp.style.display = "none";
-        }
+        document.querySelector(".avatar").style.backgroundColor = (app.currentPlayer === "den") ? "black" : "red";
+        document.querySelector(".avatar").style.display = "unset";
+        document.querySelector('.game-over').innerHTML = `Tới lượt bên ${message[0].currentPlayer ? "đen" : "đỏ"}`;
+
+        app.switchPlayer();
+
+        matrix.forEach((item) => {
+            console.log(item.filter(c => c === "chutuong").length === 1);
+            console.log(item.filter(c => c === "chutuong").length === 2);
+
+            if (item.filter(chess => chess === "chutuong").length === 1) {
+                isGameOver = true;
+
+                document.addEventListener("click", (e) => {
+                    e.preventDefault();
+                });
+                return;
+            }
+
+            if (isGameOver) {
+                document.querySelector('.game-over').innerHTML = "Bạn đã thắng";
+            }
+
+        });
     });
-
 </script>

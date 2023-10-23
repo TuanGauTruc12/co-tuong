@@ -56,10 +56,8 @@ namespace BanCov1.Controllers.api
         [HttpPost]
         [Route("move-check-node")]
         public IActionResult chessMove(List<MoveChess> movenodeList)
-        {
-            hubContext.Clients.All.SendAsync("ReceiveChessMove", JsonSerializer.Serialize(movenodeList));
-
-            return Ok(new { status = true, message = "" });
+        {            
+            return Ok(new { status = true, message = "", data = movenodeList });
         }
     }
 }
